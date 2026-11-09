@@ -1,0 +1,126 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    font-size: 17px;
+    background-color: #F7F6F2;
+    color: #0F1720;
+    scroll-behavior: smooth;
+  }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    line-height: 1.55;
+    background-color: #F7F6F2;
+    color: #0F1720;
+    margin: 0;
+    padding: 0;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Space Grotesk', sans-serif;
+    color: #0F1720;
+    line-height: 1.2;
+  }
+
+  code, pre, .font-mono {
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  /* Accessible high-contrast visible focus style */
+  a:focus-visible,
+  button:focus-visible,
+  input:focus-visible,
+  select:focus-visible,
+  textarea:focus-visible,
+  [tabindex]:focus-visible {
+    outline: 3px solid #0F1720 !important;
+    outline-offset: 3px !important;
+  }
+}
+
+/* Hard-edged diagonal stripe bar at the very top of page (ink and amber) */
+.stripe-bar-top {
+  height: 6px;
+  width: 100%;
+  background-image: repeating-linear-gradient(
+    135deg,
+    #0F1720 0px,
+    #0F1720 10px,
+    #F5B301 10px,
+    #F5B301 20px
+  );
+}
+
+/* Max content wrapper */
+.content-wrapper {
+  max-width: 1200px;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 32px;
+  padding-right: 32px;
+}
+
+/* 7px amber underline */
+.amber-underline {
+  border-bottom: 7px solid #F5B301;
+  display: inline-block;
+  line-height: 0.95;
+  padding-bottom: 2px;
+}
+
+/* Rectangular Severity Chips (strictly no pill badges) */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 8px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1;
+  border-radius: 2px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.chip-critical {
+  background-color: #FDE8E6;
+  color: #8E1B12;
+}
+
+.chip-high {
+  background-color: #FDEBDD;
+  color: #8F3A0A;
+}
+
+.chip-medium {
+  background-color: #FBF1CC;
+  color: #6B4E00;
+}
+
+.chip-low {
+  background-color: #E4EEE9;
+  color: #1F5A3D;
+}
+
+.chip-pass {
+  background-color: #E4EEE9;
+  color: #1F5A3D;
+}
+
+.chip-owasp {
+  background-color: #F7F6F2;
+  color: #3A4552;
+  border: 1px solid #E3E0D8;
+}
+
+/* Standard Hairline Divider */
+.hairline {
+  height: 1px;
+  background-color: #E3E0D8;
+  border: none;
+}
