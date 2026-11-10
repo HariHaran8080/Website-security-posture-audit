@@ -34,7 +34,7 @@ class PortScannerRule(BaseRule):
     category = "Exposed Network Services & Ports"
     rule_id = "RULE_PORT_SCANNER"
 
-    def __init__(self, max_threads: int = 10, timeout: float = 1.0):
+    def __init__(self, max_threads: int = 20, timeout: float = 0.8):
         self.max_threads = max_threads
         self.timeout = timeout
 

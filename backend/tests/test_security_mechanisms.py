@@ -51,3 +51,4 @@ def test_rate_limiter():
     allowed, retry_after = limiter.is_allowed(client_ip)
     assert allowed is False
     assert retry_after > 0
+

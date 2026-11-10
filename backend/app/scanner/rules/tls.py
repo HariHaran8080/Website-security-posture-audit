@@ -11,7 +11,7 @@ class TLSCheckRule(BaseRule):
     category = "TLS / SSL Configuration"
     rule_id = "RULE_TLS_CHECK"
 
-    def inspect_tls(self, hostname: str, port: int = 443, timeout: float = 4.0) -> list[Finding]:
+    def inspect_tls(self, hostname: str, port: int = 443, timeout: float = 2.0) -> list[Finding]:
         findings: list[Finding] = []
 
         # 1. Primary Handshake & Certificate Validation

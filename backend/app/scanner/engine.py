@@ -39,15 +39,15 @@ class SecurityScannerEngine:
         # Initial context gathering
         context = await self._gather_context(sanitized_url, has_permission)
 
-        # Run rules sequentially / safely
-        all_findings: list[Finding] = []
-        for rule in self.rules:
+        # Run all modular rules concurrently
+        async def _safe_eval(rule: BaseRule) -> list[Finding]:
             try:
-                rule_findings = await rule.evaluate(target_url, context)
-                all_findings.extend(rule_findings)
-            except Exception as exc:
-                # Catch rule failures without crashing whole scan
-                continue
+                return await rule.evaluate(sanitized_url, context)
+            except Exception:
+                return []
+
+        results = await asyncio.gather(*[_safe_eval(r) for r in self.rules])
+        all_findings: list[Finding] = [f for sublist in results for f in sublist]
 
         # Score calculations and OWASP aggregations
         score_data = calculate_posture_score(all_findings)

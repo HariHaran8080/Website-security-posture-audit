@@ -6,6 +6,8 @@ import httpx
 from app.scanner.rules.base import BaseRule, Finding
 from app.scanner.constants import Severity, FindingStatus, OWASP
 
+USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 (WASP Security Posture Auditor)"
+
 class ExposedFilesRule(BaseRule):
     category = "Exposed Files & Sensitive Paths"
     rule_id = "RULE_EXPOSED_FILES"
@@ -73,88 +75,93 @@ class ExposedFilesRule(BaseRule):
         }
     ]
 
+    async def _check_path(self, client: httpx.AsyncClient, base_url: str, item: dict[str, Any]) -> Finding | None:
+        target_path = item["path"]
+        full_url = urljoin(base_url, target_path)
+
+        try:
+            async with client.stream("GET", full_url) as resp:
+                status_code = resp.status_code
+                content_type = resp.headers.get("content-type", "").lower()
+
+                raw_bytes = b""
+                async for chunk in resp.aiter_bytes():
+                    raw_bytes += chunk
+                    if len(raw_bytes) >= 2048:
+                        break
+
+                text_snippet = raw_bytes[:1000].decode("utf-8", errors="ignore")
+
+                is_exposed = False
+                if status_code == 200:
+                    sig = item["signature"]
+                    if sig:
+                        if sig in text_snippet:
+                            is_exposed = True
+                    else:
+                        if "zip" in target_path:
+                            if "zip" in content_type or raw_bytes.startswith(b"PK"):
+                                is_exposed = True
+                        elif target_path == "/admin":
+                            is_exposed = True
+
+            if is_exposed:
+                if target_path == "/robots.txt":
+                    return Finding(
+                        id="EXPOSED_ROBOTS_TXT",
+                        category=self.category,
+                        title="robots.txt File Detected",
+                        status=FindingStatus.INFO,
+                        severity=Severity.INFO,
+                        details=f"Accessible robots.txt found at {full_url}",
+                        attacker_abuse=item["abuse"],
+                        fix=item["fix"],
+                        owasp_category=item["owasp"],
+                        score_impact=0
+                    )
+                else:
+                    return Finding(
+                        id=f"EXPOSED_{target_path.replace('/', '_').replace('.', '_').upper()}",
+                        category=self.category,
+                        title=f"Exposed Sensitive Resource: {item['name']}",
+                        status=FindingStatus.FAIL,
+                        severity=item["severity"],
+                        details=f"Potentially sensitive path `{target_path}` responded with HTTP 200 OK at {full_url}",
+                        attacker_abuse=item["abuse"],
+                        fix=item["fix"],
+                        owasp_category=item["owasp"],
+                        score_impact=item["penalty"]
+                    )
+            else:
+                if target_path != "/robots.txt":
+                    return Finding(
+                        id=f"SAFE_{target_path.replace('/', '_').replace('.', '_').upper()}",
+                        category=self.category,
+                        title=f"Protected: {item['name']}",
+                        status=FindingStatus.PASS,
+                        severity=Severity.INFO,
+                        details=f"Path `{target_path}` is properly blocked or not found (Status: {status_code}).",
+                        attacker_abuse="None. The path is protected or absent.",
+                        fix="Continue enforcing strict access control.",
+                        owasp_category=item["owasp"],
+                        score_impact=0
+                    )
+        except Exception:
+            pass
+
+        return None
+
     async def evaluate(self, target_url: str, context: dict[str, Any]) -> list[Finding]:
-        findings: list[Finding] = []
         base_url = target_url.rstrip("/")
 
-        async with httpx.AsyncClient(timeout=4.0, follow_redirects=False, verify=False) as client:
-            for item in self.SENSITIVE_PATHS:
-                target_path = item["path"]
-                full_url = urljoin(base_url, target_path)
+        headers = {"User-Agent": USER_AGENT}
+        async with httpx.AsyncClient(timeout=2.5, follow_redirects=False, verify=False, headers=headers) as client:
+            tasks = [self._check_path(client, base_url, item) for item in self.SENSITIVE_PATHS]
+            results = await asyncio.gather(*tasks, return_exceptions=True)
 
-                # Rate limiting / polite delay
-                await asyncio.sleep(0.12)
-
-                try:
-                    # Stream request and read only first 2KB to prevent memory exhaustion on large files
-                    async with client.stream("GET", full_url) as resp:
-                        status_code = resp.status_code
-                        content_type = resp.headers.get("content-type", "").lower()
-                        
-                        raw_bytes = b""
-                        async for chunk in resp.aiter_bytes():
-                            raw_bytes += chunk
-                            if len(raw_bytes) >= 2048:
-                                break
-
-                        text_snippet = raw_bytes[:1000].decode("utf-8", errors="ignore")
-
-                        is_exposed = False
-                        if status_code == 200:
-                            sig = item["signature"]
-                            if sig:
-                                if sig in text_snippet:
-                                    is_exposed = True
-                            else:
-                                if "zip" in target_path:
-                                    if "zip" in content_type or raw_bytes.startswith(b"PK"):
-                                        is_exposed = True
-                                elif target_path == "/admin":
-                                    is_exposed = True
-
-                    if is_exposed:
-                        if target_path == "/robots.txt":
-                            findings.append(Finding(
-                                id="EXPOSED_ROBOTS_TXT",
-                                category=self.category,
-                                title="robots.txt File Detected",
-                                status=FindingStatus.INFO,
-                                severity=Severity.INFO,
-                                details=f"Accessible robots.txt found at {full_url}",
-                                attacker_abuse=item["abuse"],
-                                fix=item["fix"],
-                                owasp_category=item["owasp"],
-                                score_impact=0
-                            ))
-                        else:
-                            findings.append(Finding(
-                                id=f"EXPOSED_{target_path.replace('/', '_').replace('.', '_').upper()}",
-                                category=self.category,
-                                title=f"Exposed Sensitive Resource: {item['name']}",
-                                status=FindingStatus.FAIL,
-                                severity=item["severity"],
-                                details=f"Potentially sensitive path `{target_path}` responded with HTTP 200 OK at {full_url}",
-                                attacker_abuse=item["abuse"],
-                                fix=item["fix"],
-                                owasp_category=item["owasp"],
-                                score_impact=item["penalty"]
-                            ))
-                    else:
-                        if target_path != "/robots.txt":
-                            findings.append(Finding(
-                                id=f"SAFE_{target_path.replace('/', '_').replace('.', '_').upper()}",
-                                category=self.category,
-                                title=f"Protected: {item['name']}",
-                                status=FindingStatus.PASS,
-                                severity=Severity.INFO,
-                                details=f"Path `{target_path}` is properly blocked or not found (Status: {status_code}).",
-                                attacker_abuse="None. The path is protected or absent.",
-                                fix="Continue enforcing strict access control.",
-                                owasp_category=item["owasp"],
-                                score_impact=0
-                            ))
-                except Exception:
-                    # Target endpoint timed out or failed to respond
-                    pass
+        findings: list[Finding] = []
+        for res in results:
+            if isinstance(res, Finding):
+                findings.append(res)
 
         return findings

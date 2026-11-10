@@ -42,3 +42,4 @@ def check_scan_rate_limit(request: Request):
             detail=f"Rate limit exceeded. Maximum 15 scans per minute allowed. Try again in {retry_after} seconds.",
             headers={"Retry-After": str(retry_after)}
         )
+
