@@ -44,13 +44,13 @@ An automated, defensive cybersecurity auditor designed to evaluate the security 
                                  (URL + Consent Authorization)
                                                  v
 +-----------------------------------------------------------------------------------------------+
-| FastAPI Application (Port 8000)                                                              |
+| FastAPI Application (Port 8000)                                                               |
 |                                                                                               |
 |  +-----------------------------------------------------------------------------------------+  |
 |  | Security Guards:                                                                        |  |
 |  |  ├── Sliding Window Rate Limiter (15 requests/min per IP)                               |  |
 |  |  ├── Consent Guard (403 Forbidden if consent is False)                                  |  |
-|  |  └── SSRF Validator (Blocks 10.0.0.0/8, 192.168.0.0/16, 169.254.169.254, etc.)           |  |
+|  |  └── SSRF Validator (Blocks 10.0.0.0/8, 192.168.0.0/16, 169.254.169.254, etc.)           | |
 |  +-----------------------------------------------------------------------------------------+  |
 |                                                |                                              |
 |                                                v                                              |
