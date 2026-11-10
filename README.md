@@ -205,7 +205,7 @@ Open your browser at `http://localhost:5173`
 
 ---
 ## Demo Video 
-- **Link** :[https://drive.google.com/drive/folders/1CmIzv0oy8zHaKdyXFr1e5U_gcI88EcDx?usp=sharing](https://drive.google.com/drive/folders/1CmIzv0oy8zHaKdyXFr1e5U_gcI88EcDx?usp=sharing)
+- **Link** :[https://drive.google.com/file/d/1KqFy5VRRiFr7zUyjyiQAKMBcvgEyzjBD/view?usp=sharing](https://drive.google.com/file/d/1KqFy5VRRiFr7zUyjyiQAKMBcvgEyzjBD/view?usp=sharing)
   
 ## Author and Connect
 
